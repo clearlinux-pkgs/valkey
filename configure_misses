@@ -4,7 +4,9 @@ Configure miss: malloc_size
 Configure miss: memcntl
 Configure miss: whether Darwin OSAtomic*() is compilable
 Configure miss: whether Darwin os_unfair_lock_*() is compilable
+Configure miss: whether compiler is cray
 Configure miss: whether compiler supports -Werror=unknown-warning-option
+Configure miss: whether compiler supports -Wshorten-64-to-32
 Configure miss: whether compiler supports -herror_on_warning
 Configure miss: whether compiler supports -herror_on_warning
 Configure miss: whether compiler supports -herror_on_warning
