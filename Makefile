@@ -1,5 +1,5 @@
 PKG_NAME := valkey
-URL = https://github.com/valkey-io/valkey/archive/refs/tags/7.2.6.tar.gz
+URL = https://github.com/valkey-io/valkey/archive/8.0.0/valkey-8.0.0.tar.gz
 ARCHIVES = 
 
 include ../common/Makefile.common
