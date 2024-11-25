@@ -1,0 +1,131 @@
+From c55ff68ad5327dd4c7ad1f63dc1027fa80cde5a5 Mon Sep 17 00:00:00 2001
+From: William Douglas <william.douglas@intel.com>
+Date: Mon, 25 Nov 2024 14:35:26 -0800
+Subject: [PATCH] Set defaults for services and config
+
+Modify original config and services to be reasonably backwards
+compatible with the old redis setup. Update the config loading code to
+make the drop in /etc configs optional.
+
+Signed-off-by: William Douglas <william.douglas@intel.com>
+---
+ src/config.c                                   |  5 +++++
+ utils/systemd-valkey_multiple_servers@.service | 10 +++++-----
+ utils/systemd-valkey_server.service            | 12 +++++-------
+ valkey.conf                                    |  6 ++++--
+ 4 files changed, 19 insertions(+), 14 deletions(-)
+
+diff --git a/src/config.c b/src/config.c
+index 2d4e703..82218f5 100644
+--- a/src/config.c
++++ b/src/config.c
+@@ -658,6 +658,11 @@ void loadServerConfig(char *filename, char config_from_stdin, char *options) {
+             /* No wildcard in filename means we can use the original logic to read and
+              * potentially fail traditionally */
+             if ((fp = fopen(filename, "r")) == NULL) {
++                if (strcmp(filename, "/etc/redis.conf") == 0) {
++                    return;
++                } else if (strcmp(filename, "/etc/valkey.conf") == 0) {
++                    return;
++                }
+                 serverLog(LL_WARNING, "Fatal error, can't open config file '%s': %s", filename, strerror(errno));
+                 exit(1);
+             }
+diff --git a/utils/systemd-valkey_multiple_servers@.service b/utils/systemd-valkey_multiple_servers@.service
+index 2d6f4e8..bcf235a 100644
+--- a/utils/systemd-valkey_multiple_servers@.service
++++ b/utils/systemd-valkey_multiple_servers@.service
+@@ -17,10 +17,10 @@ Documentation=https://github.com/valkey-io/valkey-doc
+ # to live at /etc/valkey/valkey_server_<INSTANCE_NAME>.conf
+ AssertPathExists=/etc/valkey/valkey_server_%i.conf
+ #Before=your_application.service another_example_application.service
+-#AssertPathExists=/var/lib/valkey
++AssertPathExists=/var/lib/redis
+ 
+ [Service]
+-ExecStart=/usr/local/bin/valkey-server /etc/valkey/valkey_server_%i.conf
++ExecStart=/usr/bin/valkey-server /etc/valkey/valkey_server_%i.conf
+ LimitNOFILE=10032
+ NoNewPrivileges=yes
+ #OOMScoreAdjust=-900
+@@ -29,9 +29,9 @@ Type=notify
+ TimeoutStartSec=infinity
+ TimeoutStopSec=infinity
+ UMask=0077
+-#User=valkey
+-#Group=valkey
+-#WorkingDirectory=/var/lib/valkey
++User=redis
++Group=redis
++WorkingDirectory=/var/lib/redis
+ 
+ [Install]
+ WantedBy=multi-user.target
+diff --git a/utils/systemd-valkey_server.service b/utils/systemd-valkey_server.service
+index 0842105..7048ce5 100644
+--- a/utils/systemd-valkey_server.service
++++ b/utils/systemd-valkey_server.service
+@@ -19,14 +19,12 @@
+ Description=Valkey data structure server
+ Documentation=https://github.com/valkey-io/valkey-doc
+ #Before=your_application.service another_example_application.service
+-#AssertPathExists=/var/lib/valkey
++AssertPathExists=/var/lib/redis
+ Wants=network-online.target
+ After=network-online.target
+ 
+ [Service]
+-ExecStart=/usr/local/bin/valkey-server --supervised systemd --daemonize no
+-## Alternatively, have valkey-server load a configuration file:
+-#ExecStart=/usr/local/bin/valkey-server /path/to/your/valkey.conf
++ExecStart=/usr/bin/valkey-server /usr/share/defaults/etc/valkey.conf
+ LimitNOFILE=10032
+ NoNewPrivileges=yes
+ #OOMScoreAdjust=-900
+@@ -35,9 +33,9 @@ Type=notify
+ TimeoutStartSec=infinity
+ TimeoutStopSec=infinity
+ UMask=0077
+-#User=valkey
+-#Group=valkey
+-#WorkingDirectory=/var/lib/valkey
++User=redis
++Group=redis
++WorkingDirectory=/var/lib/redis
+ 
+ [Install]
+ WantedBy=multi-user.target
+diff --git a/valkey.conf b/valkey.conf
+index 0f43f5c..5517c78 100644
+--- a/valkey.conf
++++ b/valkey.conf
+@@ -43,6 +43,8 @@
+ # include /path/to/other.conf
+ # include /path/to/fragments/*.conf
+ #
++include /etc/redis.conf
++include /etc/valkey.conf
+ 
+ ################################## MODULES #####################################
+ 
+@@ -323,7 +325,7 @@ daemonize no
+ # The default is "no". To run under upstart/systemd, you can simply uncomment
+ # the line below:
+ #
+-# supervised auto
++supervised systemd
+ 
+ # If a pid file is specified, the server writes it where specified at startup
+ # and removes it at exit.
+@@ -526,7 +528,7 @@ rdb-del-sync-files no
+ # 'cluster-config-file' configuration directive is a relative path.
+ #
+ # Note that you must specify a directory here, not a file name.
+-dir ./
++dir /var/lib/redis
+ 
+ ################################# REPLICATION #################################
+ 
+-- 
+2.47.0
+

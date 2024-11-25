@@ -7,13 +7,14 @@
 #
 Name     : valkey
 Version  : 8.0.1
-Release  : 5
+Release  : 6
 URL      : https://github.com/valkey-io/valkey/archive/8.0.1/valkey-8.0.1.tar.gz
 Source0  : https://github.com/valkey-io/valkey/archive/8.0.1/valkey-8.0.1.tar.gz
 Summary  : Minimalistic C client library for Redis.
 Group    : Development/Tools
 License  : BSD-2-Clause BSD-3-Clause BSL-1.0 CC0-1.0 MIT
 Requires: valkey-bin = %{version}-%{release}
+Requires: valkey-data = %{version}-%{release}
 Requires: valkey-license = %{version}-%{release}
 Requires: valkey-services = %{version}-%{release}
 BuildRequires : jemalloc-dev
@@ -22,6 +23,7 @@ BuildRequires : systemd-dev
 %define __strip /bin/true
 %define debug_package %{nil}
 Patch1: 0001-use-system-jemalloc.patch
+Patch2: 0001-Set-defaults-for-services-and-config.patch
 
 %description
 jemalloc is a general purpose malloc(3) implementation that emphasizes
@@ -39,11 +41,20 @@ world applications.
 %package bin
 Summary: bin components for the valkey package.
 Group: Binaries
+Requires: valkey-data = %{version}-%{release}
 Requires: valkey-license = %{version}-%{release}
 Requires: valkey-services = %{version}-%{release}
 
 %description bin
 bin components for the valkey package.
+
+
+%package data
+Summary: data components for the valkey package.
+Group: Data
+
+%description data
+data components for the valkey package.
 
 
 %package license
@@ -67,13 +78,14 @@ services components for the valkey package.
 %setup -q -n valkey-8.0.1
 cd %{_builddir}/valkey-8.0.1
 %patch -P 1 -p1
+%patch -P 2 -p1
 
 %build
 export http_proxy=http://127.0.0.1:9/
 export https_proxy=http://127.0.0.1:9/
 export no_proxy=localhost,127.0.0.1,0.0.0.0
 export LANG=C.UTF-8
-export SOURCE_DATE_EPOCH=1732573031
+export SOURCE_DATE_EPOCH=1732574519
 export GCC_IGNORE_WERROR=1
 export AR=gcc-ar
 export RANLIB=gcc-ranlib
@@ -107,7 +119,7 @@ FFLAGS="$CLEAR_INTERMEDIATE_FFLAGS"
 FCFLAGS="$CLEAR_INTERMEDIATE_FCFLAGS"
 ASFLAGS="$CLEAR_INTERMEDIATE_ASFLAGS"
 LDFLAGS="$CLEAR_INTERMEDIATE_LDFLAGS"
-export SOURCE_DATE_EPOCH=1732573031
+export SOURCE_DATE_EPOCH=1732574519
 rm -rf %{buildroot}
 ## install_prepend content
 export PREFIX=%{buildroot}/usr
@@ -126,6 +138,7 @@ GOAMD64=v2
 ## install_append content
 install -Dm 0644 utils/systemd-valkey_multiple_servers@.service %{buildroot}/usr/lib/systemd/system/systemd-valkey_multiple_servers@.service
 install -Dm 0644 utils/systemd-valkey_server.service %{buildroot}/usr/lib/systemd/system/systemd-valkey_server.service
+install -Dm 0644 valkey.conf %{buildroot}/usr/share/defaults/etc/valkey.conf
 ## install_append end
 
 %files
@@ -145,6 +158,10 @@ install -Dm 0644 utils/systemd-valkey_server.service %{buildroot}/usr/lib/system
 /usr/bin/valkey-cli
 /usr/bin/valkey-sentinel
 /usr/bin/valkey-server
+
+%files data
+%defattr(-,root,root,-)
+/usr/share/defaults/etc/valkey.conf
 
 %files license
 %defattr(0644,root,root,0755)
