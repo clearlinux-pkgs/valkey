@@ -1,0 +1,2 @@
+install -Dm 0644 utils/systemd-valkey_multiple_servers@.service %{buildroot}/usr/lib/systemd/system/systemd-valkey_multiple_servers@.service
+install -Dm 0644 utils/systemd-valkey_server.service %{buildroot}/usr/lib/systemd/system/systemd-valkey_server.service
